@@ -13,30 +13,35 @@
       <span class="title">Game Push Manager · 网页后台</span>
     </div>
     <div class="meta">
+      <span class="model-tag">Push 模型</span>
       <span id="generatedAt">—</span>
-      <button id="refreshBtn" class="btn">立即刷新</button>
     </div>
   </header>
 
   <main class="container">
     <section class="summary" id="summary">
       <div class="card stat">
-        <div class="stat-label">服务端在线</div>
-        <div class="stat-value" id="serversOnline">— / —</div>
+        <div class="stat-label">上报端在线</div>
+        <div class="stat-value" id="reportersOnline">— / —</div>
       </div>
       <div class="card stat">
-        <div class="stat-label">整合包总数</div>
+        <div class="stat-label">整合包（服务端聚合）</div>
         <div class="stat-value" id="totalModpacks">—</div>
       </div>
       <div class="card stat">
-        <div class="stat-label">模组总数</div>
+        <div class="stat-label">模组（服务端聚合）</div>
         <div class="stat-value" id="totalMods">—</div>
       </div>
     </section>
 
     <section>
-      <h2>服务端状态</h2>
+      <h2>服务端状态（主动上报）</h2>
       <div id="serverList" class="grid"></div>
+    </section>
+
+    <section>
+      <h2>客户端状态（主动上报）</h2>
+      <div id="clientList" class="grid"></div>
     </section>
 
     <section>

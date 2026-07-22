@@ -29,17 +29,14 @@ body {
 .title { font-size: 18px; font-weight: 600; }
 
 .meta { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #cbd5e1; }
-
-.btn {
-  background: #3b82f6;
+.model-tag {
+  background: #0ea5e9;
   color: #fff;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
 }
-.btn:hover { background: #2563eb; }
 
 .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
 
@@ -60,12 +57,12 @@ h2 { font-size: 16px; margin-bottom: 12px; color: #334155; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 
-.server-card { border-left: 4px solid #cbd5e1; }
-.server-card.online { border-left-color: #22c55e; }
-.server-card.offline { border-left-color: #ef4444; }
+.reporter-card { border-left: 4px solid #cbd5e1; }
+.reporter-card.online { border-left-color: #22c55e; }
+.reporter-card.offline { border-left-color: #ef4444; }
 
-.server-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.server-name { font-weight: 600; }
+.reporter-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.reporter-name { font-weight: 600; }
 .badge {
   font-size: 11px;
   padding: 2px 8px;
@@ -74,11 +71,21 @@ h2 { font-size: 16px; margin-bottom: 12px; color: #334155; }
 }
 .badge.online { background: #dcfce7; color: #166534; }
 .badge.offline { background: #fee2e2; color: #991b1b; }
+.badge.kind { background: #e0e7ff; color: #3730a3; margin-left: 6px; }
 
-.server-rows { font-size: 13px; color: #475569; }
-.server-rows div { display: flex; justify-content: space-between; padding: 2px 0; }
-.server-rows .k { color: #94a3b8; }
-.server-error { color: #dc2626; font-size: 12px; margin-top: 6px; word-break: break-all; }
+.reporter-rows { font-size: 13px; color: #475569; }
+.reporter-rows div { display: flex; justify-content: space-between; padding: 2px 0; }
+.reporter-rows .k { color: #94a3b8; }
+
+.installed-list { margin-top: 6px; font-size: 12px; }
+.installed-list .chip {
+  display: inline-block;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin: 2px 4px 2px 0;
+  color: #334155;
+}
 
 .game-block { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 .game-title { font-weight: 600; margin-bottom: 8px; color: #1e293b; text-transform: capitalize; }

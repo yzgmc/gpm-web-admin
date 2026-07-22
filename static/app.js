@@ -1,21 +1,11 @@
 const API = '/api/v1/dashboard';
 
 function fmtBytes(n) {
-  if (!n && n !== 0) return '—';
+  if (n == null) return '—';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let i = 0, v = n;
   while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
   return v.toFixed(v < 10 ? 1 : 0) + ' ' + units[i];
-}
-
-function fmtDuration(sec) {
-  if (sec == null) return '—';
-  const d = Math.floor(sec / 86400);
-  const h = Math.floor((sec % 86400) / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  if (d > 0) return `${d}天 ${h}时`;
-  if (h > 0) return `${h}时 ${m}分`;
-  return `${m}分`;
 }
 
 function fmtTime(iso) {
@@ -24,35 +14,83 @@ function fmtTime(iso) {
 }
 
 function renderSummary(data) {
-  document.getElementById('serversOnline').textContent = `${data.servers_online} / ${data.servers_total}`;
-  document.getElementById('totalModpacks').textContent = data.total_modpacks;
-  document.getElementById('totalMods').textContent = data.total_mods;
+  document.getElementById('reportersOnline').textContent = `${data.reporters_online} / ${data.reporters_total}`;
+  let totalMp = 0, totalMod = 0;
+  Object.values(data.games || {}).forEach(g => {
+    totalMp += (g.modpacks || []).length;
+    totalMod += (g.mods || []).length;
+  });
+  document.getElementById('totalModpacks').textContent = totalMp;
+  document.getElementById('totalMods').textContent = totalMod;
   document.getElementById('generatedAt').textContent = '生成于 ' + fmtTime(data.generated_at);
 }
 
-function renderServers(servers) {
-  const wrap = document.getElementById('serverList');
-  if (!servers || !servers.length) { wrap.innerHTML = '<div class="empty">未配置监测目标</div>'; return; }
-  wrap.innerHTML = servers.map(s => {
-    const status = s.status || {};
-    const cls = s.online ? 'online' : 'offline';
-    const badge = s.online ? '<span class="badge online">在线</span>' : '<span class="badge offline">离线</span>';
-    const rows = s.online ? `
-      <div><span class="k">协议版本</span><span>${status.protocol_version || '—'}</span></div>
-      <div><span class="k">运行时长</span><span>${fmtDuration(status.uptime_seconds)}</span></div>
-      <div><span class="k">整合包</span><span>${status.modpack_count ?? 0}</span></div>
-      <div><span class="k">模组</span><span>${status.mod_count ?? 0}</span></div>
-      <div><span class="k">存储占用</span><span>${fmtBytes(status.storage_used_bytes)}</span></div>
-      <div><span class="k">延迟</span><span>${s.latency_ms ?? '—'} ms</span></div>
-      <div><span class="k">地址</span><span>${s.base_url}</span></div>
-    ` : `<div><span class="k">地址</span><span>${s.base_url}</span></div>`;
-    const err = s.last_error ? `<div class="server-error">${s.last_error}</div>` : '';
-    return `<div class="card server-card ${cls}">
-      <div class="server-head"><span class="server-name">${s.name}</span>${badge}</div>
-      <div class="server-rows">${rows}</div>
-      ${err}
-    </div>`;
-  }).join('');
+function renderReporter(card, r) {
+  const cls = r.online ? 'online' : 'offline';
+  const badge = r.online
+    ? '<span class="badge online">在线</span>'
+    : '<span class="badge offline">离线</span>';
+  const kindBadge = `<span class="badge kind">${r.kind}</span>`;
+  const m = r.metrics || {};
+  let rows = '';
+  if (r.kind === 'client') {
+    const installed = (m.installed_modpacks || []).map(i => `<span class="chip">${i.name || i.id}</span>`).join('');
+    rows = `
+      <div><span class="k">协议版本</span><span>${r.protocol_version}</span></div>
+      <div><span class="k">已安装整合包</span><span>${(m.installed_modpacks || []).length}</span></div>
+      <div><span class="k">上次同步</span><span>${fmtTime(m.last_sync_at)}</span></div>
+      <div><span class="k">距上次上报</span><span>${r.seconds_since_seen}s</span></div>
+      <div><span class="k">上报次数</span><span>${r.received_count}</span></div>
+      ${installed ? `<div class="installed-list">${installed}</div>` : ''}
+    `;
+  } else {
+    rows = `
+      <div><span class="k">协议版本</span><span>${r.protocol_version}</span></div>
+      <div><span class="k">整合包</span><span>${m.modpack_count ?? 0}</span></div>
+      <div><span class="k">模组</span><span>${m.mod_count ?? 0}</span></div>
+      <div><span class="k">存储占用</span><span>${fmtBytes(m.storage_used_bytes)}</span></div>
+      <div><span class="k">运行时长</span><span>${fmtDuration(m.uptime_seconds)}</span></div>
+      <div><span class="k">地址</span><span>${r.base_url || '—'}</span></div>
+      <div><span class="k">距上次上报</span><span>${r.seconds_since_seen}s</span></div>
+      <div><span class="k">上报次数</span><span>${r.received_count}</span></div>
+    `;
+  }
+  card.innerHTML = `<div class="card reporter-card ${cls}">
+    <div class="reporter-head"><span class="reporter-name">${r.name}</span><span>${badge}${kindBadge}</span></div>
+    <div class="reporter-rows">${rows}</div>
+  </div>`;
+}
+
+function fmtDuration(sec) {
+  if (sec == null) return '—';
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+  if (d > 0) return `${d}天 ${h}时`;
+  if (h > 0) return `${h}时 ${m}分`;
+  return `${m}分`;
+}
+
+function renderGroup(containerId, byKind, kinds) {
+  const wrap = document.getElementById(containerId);
+  const items = [];
+  kinds.forEach(k => {
+    const group = byKind[k];
+    if (group) items.push(...group.items);
+  });
+  if (!items.length) { wrap.innerHTML = '<div class="empty">暂无上报</div>'; return; }
+  wrap.innerHTML = '';
+  items.forEach(r => {
+    const card = document.createElement('div');
+    renderReporter(card, r);
+    wrap.appendChild(card);
+  });
+}
+
+function renderServers(data) {
+  renderGroup('serverList', data.by_kind || {}, ['windows-server', 'web-server']);
+}
+
+function renderClients(data) {
+  renderGroup('clientList', data.by_kind || {}, ['client']);
 }
 
 function renderGames(games) {
@@ -90,20 +128,13 @@ async function load() {
     const res = await fetch(API);
     const data = await res.json();
     renderSummary(data);
-    renderServers(data.servers);
+    renderServers(data);
+    renderClients(data);
     renderGames(data.games);
   } catch (e) {
     document.getElementById('generatedAt').textContent = '加载失败: ' + e;
   }
 }
 
-document.getElementById('refreshBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('refreshBtn');
-  btn.disabled = true; btn.textContent = '刷新中…';
-  try { await fetch(API + '/refresh'); } catch {}
-  await load();
-  btn.disabled = false; btn.textContent = '立即刷新';
-});
-
 load();
-setInterval(load, 10000);
+setInterval(load, 5000);

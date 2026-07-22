@@ -1,8 +1,11 @@
-"""FastAPI 应用入口：托管仪表盘 API 与静态前端。"""
+"""FastAPI 应用入口：托管仪表盘 API 与静态前端。
+
+Push 模型：web-admin 不再主动轮询各服务端，而是被动接收 server / web-server / client
+通过 POST /api/v1/report 上报的 Heartbeat。仪表盘从内存 report_store 读取数据。
+"""
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -10,9 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.config import settings
-from app.monitor import monitor
-from app.routes import dashboard
+from app.routes import dashboard, report
 
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -21,7 +22,7 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Game Push Manager - Web Admin",
-        description="监测 windows-server 与 web-server 状态及游戏推送条目。",
+        description="被动接收各端上报的 Heartbeat，监测 windows-server / web-server / client 状态及推送条目。",
     )
     app.add_middleware(
         CORSMiddleware,
@@ -31,15 +32,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(report.router)
     app.include_router(dashboard.router)
-
-    @app.on_event("startup")
-    def _start_monitor():
-        monitor.start()
-
-    @app.on_event("shutdown")
-    def _stop_monitor():
-        monitor.stop()
 
     # 静态资源
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
