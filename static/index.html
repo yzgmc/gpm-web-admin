@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Push Manager · 网页后台</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">GPM</span>
+      <span class="title">Game Push Manager · 网页后台</span>
+    </div>
+    <div class="meta">
+      <span id="generatedAt">—</span>
+      <button id="refreshBtn" class="btn">立即刷新</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="summary" id="summary">
+      <div class="card stat">
+        <div class="stat-label">服务端在线</div>
+        <div class="stat-value" id="serversOnline">— / —</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-label">整合包总数</div>
+        <div class="stat-value" id="totalModpacks">—</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-label">模组总数</div>
+        <div class="stat-value" id="totalMods">—</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>服务端状态</h2>
+      <div id="serverList" class="grid"></div>
+    </section>
+
+    <section>
+      <h2>游戏推送条目</h2>
+      <div id="gameList"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
