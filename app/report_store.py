@@ -13,6 +13,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from gpm_common import LightLevel, aggregate_light
 from gpm_common.heartbeat import Heartbeat
 
 
@@ -45,10 +46,26 @@ class StoredReport:
         age = (now - self.last_seen_at).total_seconds()
         return age > STALE_SECONDS
 
+    def light_level(self) -> str:
+        """返回该上报端的灯色。离线视为红灯；未上报灯色视为 off。"""
+        if self.is_stale():
+            return LightLevel.RED
+        hb_light = self.last_heartbeat.light
+        if hb_light is None:
+            return LightLevel.OFF
+        return hb_light.level
+
     def to_dict(self) -> dict[str, Any]:
         now = _now()
         age = (now - self.last_seen_at).total_seconds()
         online = not self.is_stale(now)
+        # 灯色：离线 -> red；否则用上报的 light（无则 off）
+        level = self.light_level()
+        reason = ""
+        if online and self.last_heartbeat.light is not None:
+            reason = self.last_heartbeat.light.reason
+        elif not online:
+            reason = f"超过 {int(STALE_SECONDS)}s 未上报心跳"
         return {
             "reporter_id": self.reporter_id,
             "kind": self.kind,
@@ -56,6 +73,7 @@ class StoredReport:
             "base_url": self.base_url,
             "online": online,
             "status": self.last_heartbeat.status,
+            "light": {"level": level, "reason": reason},
             "last_seen_at": self.last_seen_at.isoformat(),
             "seconds_since_seen": round(age, 1),
             "received_count": self.received_count,
@@ -117,15 +135,28 @@ class ReportStore:
                     "source": r.name,
                 }
 
+        # 总体系统灯：所有上报端灯色取最严重者；无上报端则 off
+        all_levels = [r.light_level() for r in snaps]
+        overall_light = aggregate_light(all_levels) if all_levels else LightLevel.OFF
+
+        # 按 kind 聚合灯色
+        kind_lights: dict[str, str] = {}
+        for kind, items in by_kind.items():
+            levels = [it["light"]["level"] for it in items]
+            kind_lights[kind] = aggregate_light(levels) if levels else LightLevel.OFF
+
         return {
             "generated_at": _now().isoformat(),
             "model": "push",
             "reporters_total": len(snaps),
             "reporters_online": len(online),
+            "overall_light": overall_light,
+            "kind_lights": kind_lights,
             "by_kind": {
                 k: {
                     "total": len(v),
                     "online": sum(1 for x in v if x["online"]),
+                    "light": kind_lights.get(k, LightLevel.OFF),
                     "items": v,
                 }
                 for k, v in by_kind.items()

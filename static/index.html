@@ -19,6 +19,12 @@
   </header>
 
   <main class="container">
+    <section class="overall-light" id="overallLight">
+      <span class="light-dot" id="overallDot"></span>
+      <span class="overall-label">系统总体状态</span>
+      <span class="overall-text" id="overallText">—</span>
+    </section>
+
     <section class="summary" id="summary">
       <div class="card stat">
         <div class="stat-label">上报端在线</div>
@@ -32,6 +38,14 @@
         <div class="stat-label">模组（服务端聚合）</div>
         <div class="stat-value" id="totalMods">—</div>
       </div>
+    </section>
+
+    <section class="legend">
+      <span class="legend-title">指示灯图例：</span>
+      <span class="legend-item"><span class="light-dot green"></span>健康</span>
+      <span class="legend-item"><span class="light-dot yellow"></span>降级</span>
+      <span class="legend-item"><span class="light-dot red"></span>异常</span>
+      <span class="legend-item"><span class="light-dot off"></span>未知</span>
     </section>
 
     <section>

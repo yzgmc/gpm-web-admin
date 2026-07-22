@@ -1,5 +1,7 @@
 const API = '/api/v1/dashboard';
 
+const LIGHT_LABEL = { green: '健康', yellow: '降级', red: '异常', off: '未知' };
+
 function fmtBytes(n) {
   if (n == null) return '—';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -11,6 +13,25 @@ function fmtBytes(n) {
 function fmtTime(iso) {
   if (!iso) return '—';
   try { return new Date(iso).toLocaleString('zh-CN'); } catch { return iso; }
+}
+
+function fmtDuration(sec) {
+  if (sec == null) return '—';
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+  if (d > 0) return `${d}天 ${h}时`;
+  if (h > 0) return `${h}时 ${m}分`;
+  return `${m}分`;
+}
+
+function lightDot(level) {
+  return `<span class="light-dot ${level || 'off'}"></span>`;
+}
+
+function renderOverall(data) {
+  const level = data.overall_light || 'off';
+  document.getElementById('overallDot').className = `light-dot ${level}`;
+  document.getElementById('overallText').textContent =
+    LIGHT_LABEL[level] + (level === 'off' ? '（无上报端）' : '');
 }
 
 function renderSummary(data) {
@@ -31,11 +52,13 @@ function renderReporter(card, r) {
     ? '<span class="badge online">在线</span>'
     : '<span class="badge offline">离线</span>';
   const kindBadge = `<span class="badge kind">${r.kind}</span>`;
+  const light = r.light || { level: 'off', reason: '' };
   const m = r.metrics || {};
   let rows = '';
   if (r.kind === 'client') {
     const installed = (m.installed_modpacks || []).map(i => `<span class="chip">${i.name || i.id}</span>`).join('');
     rows = `
+      <div><span class="k">灯色原因</span><span title="${light.reason}">${light.reason || '—'}</span></div>
       <div><span class="k">协议版本</span><span>${r.protocol_version}</span></div>
       <div><span class="k">已安装整合包</span><span>${(m.installed_modpacks || []).length}</span></div>
       <div><span class="k">上次同步</span><span>${fmtTime(m.last_sync_at)}</span></div>
@@ -45,28 +68,29 @@ function renderReporter(card, r) {
     `;
   } else {
     rows = `
+      <div><span class="k">灯色原因</span><span title="${light.reason}">${light.reason || '—'}</span></div>
       <div><span class="k">协议版本</span><span>${r.protocol_version}</span></div>
       <div><span class="k">整合包</span><span>${m.modpack_count ?? 0}</span></div>
       <div><span class="k">模组</span><span>${m.mod_count ?? 0}</span></div>
       <div><span class="k">存储占用</span><span>${fmtBytes(m.storage_used_bytes)}</span></div>
+      <div><span class="k">累计错误</span><span>${m.error_count ?? 0}</span></div>
       <div><span class="k">运行时长</span><span>${fmtDuration(m.uptime_seconds)}</span></div>
       <div><span class="k">地址</span><span>${r.base_url || '—'}</span></div>
       <div><span class="k">距上次上报</span><span>${r.seconds_since_seen}s</span></div>
       <div><span class="k">上报次数</span><span>${r.received_count}</span></div>
     `;
   }
-  card.innerHTML = `<div class="card reporter-card ${cls}">
-    <div class="reporter-head"><span class="reporter-name">${r.name}</span><span>${badge}${kindBadge}</span></div>
+  card.innerHTML = `<div class="card reporter-card ${cls}" style="border-left-color: ${lightColor(light.level)}">
+    <div class="reporter-head">
+      <span class="reporter-name">${lightDot(light.level)} ${r.name}</span>
+      <span>${badge}${kindBadge}</span>
+    </div>
     <div class="reporter-rows">${rows}</div>
   </div>`;
 }
 
-function fmtDuration(sec) {
-  if (sec == null) return '—';
-  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
-  if (d > 0) return `${d}天 ${h}时`;
-  if (h > 0) return `${h}时 ${m}分`;
-  return `${m}分`;
+function lightColor(level) {
+  return { green: '#22c55e', yellow: '#eab308', red: '#ef4444', off: '#cbd5e1' }[level] || '#cbd5e1';
 }
 
 function renderGroup(containerId, byKind, kinds) {
@@ -127,6 +151,7 @@ async function load() {
   try {
     const res = await fetch(API);
     const data = await res.json();
+    renderOverall(data);
     renderSummary(data);
     renderServers(data);
     renderClients(data);

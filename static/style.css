@@ -43,6 +43,56 @@ body {
 section { margin-bottom: 32px; }
 h2 { font-size: 16px; margin-bottom: 12px; color: #334155; }
 
+/* ===== 指示灯系统 ===== */
+.light-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+  vertical-align: middle;
+}
+.light-dot.green  { background: #22c55e; box-shadow: 0 0 6px 1px rgba(34,197,94,0.6); animation: pulse-green 2s infinite; }
+.light-dot.yellow { background: #eab308; box-shadow: 0 0 6px 1px rgba(234,179,8,0.6); animation: pulse-yellow 1.2s infinite; }
+.light-dot.red    { background: #ef4444; box-shadow: 0 0 6px 1px rgba(239,68,68,0.7); animation: pulse-red 0.8s infinite; }
+.light-dot.off    { background: #94a3b8; }
+
+@keyframes pulse-green  { 0%,100%{opacity:1} 50%{opacity:0.55} }
+@keyframes pulse-yellow { 0%,100%{opacity:1} 50%{opacity:0.45} }
+@keyframes pulse-red    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.15)} }
+
+.overall-light {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.overall-light .light-dot { width: 22px; height: 22px; }
+.overall-label { font-size: 14px; color: #64748b; }
+.overall-text { font-size: 18px; font-weight: 700; color: #0f172a; }
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 13px;
+  color: #475569;
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.legend-title { font-weight: 600; color: #334155; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-item .light-dot { width: 12px; height: 12px; }
+
+.kind-light-inline { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+.kind-light-inline .light-dot { width: 11px; height: 11px; }
+
 .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 
 .card {
