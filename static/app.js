@@ -1,6 +1,41 @@
 const API = '/api/v1/dashboard';
+const TOKEN_KEY = 'gpm_token';
+const USER_KEY = 'gpm_user';
 
 const LIGHT_LABEL = { green: '健康', yellow: '降级', red: '异常', off: '未知' };
+
+// ---------- 登录态管理 ----------
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+
+function requireLogin() {
+  if (!getToken()) {
+    location.href = '/login';
+    return true;
+  }
+  return false;
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  location.href = '/login';
+}
+
+// 顶部展示当前用户 + 登出按钮
+function renderUserBadge() {
+  const user = localStorage.getItem(USER_KEY) || 'admin';
+  const badge = document.getElementById('userBadge');
+  if (badge) badge.textContent = user;
+  const btn = document.getElementById('logoutBtn');
+  if (btn) btn.addEventListener('click', logout);
+}
+
+// 启动即校验：无 token 直接跳登录页
+if (requireLogin()) {
+  // 已跳转，后续代码不再执行
+} else {
+  renderUserBadge();
+}
 
 function fmtBytes(n) {
   if (n == null) return '—';
@@ -148,8 +183,15 @@ function renderGames(games) {
 }
 
 async function load() {
+  const token = getToken();
+  if (!token) { location.href = '/login'; return; }
   try {
-    const res = await fetch(API);
+    const res = await fetch(API, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.status === 401) {
+      // token 失效或过期，跳回登录
+      logout();
+      return;
+    }
     const data = await res.json();
     renderOverall(data);
     renderSummary(data);
@@ -161,5 +203,8 @@ async function load() {
   }
 }
 
-load();
-setInterval(load, 5000);
+// 仅在已登录时启动轮询
+if (getToken()) {
+  load();
+  setInterval(load, 5000);
+}

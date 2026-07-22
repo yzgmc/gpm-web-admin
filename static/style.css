@@ -146,3 +146,22 @@ h2 { font-size: 16px; margin-bottom: 12px; color: #334155; }
 .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: #e0e7ff; color: #3730a3; }
 
 .empty { color: #94a3b8; font-size: 13px; padding: 16px; text-align: center; }
+
+.user-badge {
+  background: #334155;
+  color: #e2e8f0;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.logout-btn {
+  background: transparent;
+  color: #cbd5e1;
+  border: 1px solid #475569;
+  padding: 3px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.logout-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
