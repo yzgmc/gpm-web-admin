@@ -84,6 +84,30 @@ async function api(url, opts) {
   return res;
 }
 
+// 带进度回调的上传（XMLHttpRequest 支持 upload.onprogress，fetch 不支持）
+// onProgress(pct) 中 pct 为 0~100
+function uploadWithProgress(url, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    const tok = getToken();
+    if (tok) xhr.setRequestHeader('Authorization', 'Bearer ' + tok);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress((e.loaded / e.total) * 100);
+      }
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText); } catch (_) { /* 空 body 兜底 */ }
+      if (xhr.status === 401) { logout(); reject(new Error('未授权')); return; }
+      resolve({ res: { ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status }, data });
+    };
+    xhr.onerror = () => reject(new Error('网络错误'));
+    xhr.send(formData);
+  });
+}
+
 // ---------- 状态 ----------
 async function loadStatus() {
   try {
@@ -143,14 +167,23 @@ document.getElementById('modpackForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('modpackUploadBtn');
   const msg = document.getElementById('modpackMsg');
+  const prog = document.getElementById('modpackProgress');
+  const bar = document.getElementById('modpackProgressBar');
+  const ptxt = document.getElementById('modpackProgressText');
   btn.disabled = true; btn.textContent = '上传中…'; msg.className = 'form-msg'; msg.textContent = '';
+  prog.style.display = 'flex'; bar.style.width = '0%'; ptxt.textContent = '0%';
   const fd = new FormData(e.target);
   try {
-    const res = await api('/api/v1/modpacks', { method: 'POST', headers: authHeaders(), body: fd });
-    const data = await res.json();
-    if (res.ok) { msg.className = 'form-msg ok'; msg.textContent = '上传成功'; e.target.reset(); loadModpacks(); loadStatus(); }
-    else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '上传失败'); }
+    const { res, data } = await uploadWithProgress('/api/v1/modpacks', fd, (pct) => {
+      bar.style.width = pct + '%'; ptxt.textContent = Math.round(pct) + '%';
+    });
+    if (res.ok) {
+      const tip = data.auto_detected ? '上传成功（已自动识别加载器/版本）' : '上传成功';
+      msg.className = 'form-msg ok'; msg.textContent = tip;
+      e.target.reset(); loadModpacks(); loadStatus();
+    } else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '上传失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
+  prog.style.display = 'none';
   btn.disabled = false; btn.textContent = '上传整合包';
 });
 
@@ -196,14 +229,20 @@ document.getElementById('modForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('modUploadBtn');
   const msg = document.getElementById('modMsg');
+  const prog = document.getElementById('modProgress');
+  const bar = document.getElementById('modProgressBar');
+  const ptxt = document.getElementById('modProgressText');
   btn.disabled = true; btn.textContent = '上传中…'; msg.className = 'form-msg'; msg.textContent = '';
+  prog.style.display = 'flex'; bar.style.width = '0%'; ptxt.textContent = '0%';
   const fd = new FormData(e.target);
   try {
-    const res = await api('/api/v1/mods', { method: 'POST', headers: authHeaders(), body: fd });
-    const data = await res.json();
+    const { res, data } = await uploadWithProgress('/api/v1/mods', fd, (pct) => {
+      bar.style.width = pct + '%'; ptxt.textContent = Math.round(pct) + '%';
+    });
     if (res.ok) { msg.className = 'form-msg ok'; msg.textContent = '上传成功'; e.target.reset(); loadMods(); loadStatus(); }
     else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '上传失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
+  prog.style.display = 'none';
   btn.disabled = false; btn.textContent = '上传模组';
 });
 

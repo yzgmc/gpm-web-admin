@@ -54,22 +54,27 @@
               <option value="minecraft">minecraft</option>
             </select>
           </label>
-          <label>游戏版本<input type="text" name="game_version" placeholder="1.20" required /></label>
+          <label>游戏版本<input type="text" name="game_version" placeholder="留空自动识别" /></label>
           <label>加载器
-            <select name="mod_loader">
+            <select name="mod_loader" id="modpackLoader">
+              <option value="auto">自动识别</option>
               <option value="vanilla">vanilla</option>
               <option value="forge">forge</option>
               <option value="fabric">fabric</option>
               <option value="quilt">quilt</option>
             </select>
           </label>
-          <label>加载器版本<input type="text" name="mod_loader_version" placeholder="可选" /></label>
+          <label>加载器版本<input type="text" name="mod_loader_version" placeholder="留空自动识别" /></label>
         </div>
         <div class="form-row">
           <label class="full">描述<input type="text" name="description" placeholder="可选" /></label>
         </div>
         <button type="submit" class="btn-upload" id="modpackUploadBtn">上传整合包</button>
         <span id="modpackMsg" class="form-msg"></span>
+        <div id="modpackProgress" class="upload-progress" style="display:none;">
+          <div class="progress-bar"><div class="progress-fill" id="modpackProgressBar"></div></div>
+          <span class="progress-text" id="modpackProgressText">0%</span>
+        </div>
       </form>
       <table class="data-table">
         <thead><tr><th>ID</th><th>名称</th><th>版本</th><th>游戏</th><th>游戏版本</th><th>加载器</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>
@@ -96,6 +101,10 @@
         </div>
         <button type="submit" class="btn-upload" id="modUploadBtn">上传模组</button>
         <span id="modMsg" class="form-msg"></span>
+        <div id="modProgress" class="upload-progress" style="display:none;">
+          <div class="progress-bar"><div class="progress-fill" id="modProgressBar"></div></div>
+          <span class="progress-text" id="modProgressText">0%</span>
+        </div>
       </form>
       <table class="data-table">
         <thead><tr><th>ID</th><th>名称</th><th>版本</th><th>游戏</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>

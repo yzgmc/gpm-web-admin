@@ -37,17 +37,35 @@ button, a, input, select { touch-action: manipulation; }
 .hint { margin-top: 16px; font-size: 12px; color: #94a3b8; text-align: center; }
 
 /* 顶栏 */
-.topbar { display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: #fff; padding: 12px 24px; }
-.topbar-left { display: flex; align-items: center; gap: 12px; }
-.topbar-left .logo { margin: 0; }
-.topbar-left .title { font-size: 16px; font-weight: 600; }
-.tag { background: #334155; color: #cbd5e1; padding: 2px 10px; border-radius: 10px; font-size: 12px; }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
-.user-badge { background: #334155; color: #e2e8f0; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f172a;
+  color: #fff;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.topbar-left .logo { margin: 0; flex-shrink: 0; }
+.topbar-left .title {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.tag { background: #334155; color: #cbd5e1; padding: 2px 10px; border-radius: 10px; font-size: 12px; flex-shrink: 0; }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.user-badge { background: #334155; color: #e2e8f0; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .logout-btn {
-  background: transparent; color: #cbd5e1; border: 1px solid #475569; padding: 3px 12px;
+  background: transparent; color: #cbd5e1; border: 1px solid #475569; padding: 4px 10px;
   border-radius: 6px; font-size: 12px; cursor: pointer; text-decoration: none;
   transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .logout-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 .logout-btn:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
@@ -106,6 +124,15 @@ button, a, input, select { touch-action: manipulation; }
 .form-msg { font-size: 12px; margin-left: 12px; }
 .form-msg.ok { color: #22c55e; }
 .form-msg.err { color: #ef4444; }
+
+/* 上传进度条 */
+.upload-progress { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+.progress-bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.progress-fill {
+  height: 100%; width: 0%; background: #3b82f6; border-radius: 4px;
+  transition: width 0.15s ease-out;
+}
+.progress-text { font-size: 12px; color: #475569; font-variant-numeric: tabular-nums; min-width: 38px; text-align: right; }
 
 /* 数据表 */
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -202,6 +229,48 @@ button, a, input, select { touch-action: manipulation; }
 }
 
 @media (max-width: 768px) {
-  .status-cards { grid-template-columns: repeat(2, 1fr); }
-  .modal-content { width: 95vw; }
+  /* 顶栏 */
+  .topbar { padding: 8px 12px; }
+  .topbar-left .title { font-size: 14px; }
+  .topbar-right { width: 100%; justify-content: flex-end; }
+
+  /* 状态卡片：2 列 */
+  .status-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-card { padding: 12px; }
+  .stat-value { font-size: 15px; }
+
+  /* Tab 栏：可横向滚动 */
+  .tabs-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 0; }
+  .tab-btn { padding: 8px 14px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+
+  /* 面板 */
+  .panel { padding: 14px; margin-bottom: 16px; }
+  .panel-head h2 { font-size: 15px; }
+
+  /* 表单：单列 */
+  .form-row { flex-direction: column; gap: 8px; }
+  .upload-form label { min-width: 100%; }
+  .upload-form label.full { flex-basis: 100%; }
+
+  /* 数据表：横向滚动 */
+  .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table thead { display: table; width: 100%; table-layout: fixed; }
+  .data-table tbody { display: table; width: 100%; table-layout: fixed; }
+
+  /* 弹窗 */
+  .modal-content { width: 95vw; padding: 16px; }
+
+  /* 按钮紧凑 */
+  .btn-upload, .btn-edit, .btn-toggle, .btn-del, .btn-dl { padding: 6px 10px; font-size: 12px; }
+  .refresh-btn { padding: 4px 10px; }
+}
+
+@media (max-width: 480px) {
+  .status-cards { grid-template-columns: 1fr 1fr; }
+  .stat-card { padding: 10px; }
+  .stat-value { font-size: 14px; }
+  .stat-label { font-size: 11px; }
+  .container { padding: 0 10px; margin: 12px auto; }
+  .topbar-left .title { font-size: 13px; }
+  .logout-btn { padding: 3px 8px; font-size: 11px; }
 }

@@ -34,8 +34,8 @@ async def upload_modpack(
     name: str = Form(...),
     version: str = Form(...),
     game: str = Form(...),
-    game_version: str = Form(...),
-    mod_loader: str = Form("vanilla"),
+    game_version: str = Form(""),
+    mod_loader: str = Form("auto"),
     mod_loader_version: str | None = Form(None),
     description: str = Form(""),
 ):
@@ -56,6 +56,29 @@ async def upload_modpack(
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(content)
+
+        # 自动识别：表单 game_version 留空或 mod_loader 为 auto 时，解析整合包 manifest 填充
+        auto_detected = False
+        if not game_version or mod_loader in ("", "auto"):
+            try:
+                from gpm_common import GameAdapterRegistry
+
+                adapter = GameAdapterRegistry.get(game)
+                if adapter is not None:
+                    detected = adapter.detect_metadata(tmp_path)
+                    if detected:
+                        auto_detected = True
+                        if not game_version and detected.get("game_version"):
+                            game_version = detected["game_version"]
+                        if mod_loader in ("", "auto") and detected.get("mod_loader"):
+                            mod_loader = detected["mod_loader"]
+                            # 仅当用户未手动指定 mod_loader_version 时用识别值
+                            if not mod_loader_version and detected.get("mod_loader_version"):
+                                mod_loader_version = detected["mod_loader_version"]
+            except Exception:  # noqa: BLE001
+                # 识别失败不应阻断上传，回退到表单原值
+                pass
+
         meta_fields = {
             "name": name,
             "version": version,
@@ -67,7 +90,9 @@ async def upload_modpack(
         }
         modpack = storage.save_modpack(meta_fields, tmp_path, file.filename or "modpack.zip")
         server_info.record_upload()
-        return modpack.model_dump()
+        result = modpack.model_dump()
+        result["auto_detected"] = auto_detected
+        return result
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
