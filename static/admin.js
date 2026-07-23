@@ -5,6 +5,15 @@ function getToken() { return localStorage.getItem(TOKEN_KEY); }
 function authHeaders() { return { 'Authorization': 'Bearer ' + getToken() }; }
 function logout() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); location.href = '/login'; }
 
+// 后端错误体格式：{"error":{"code":..,"message":..,"details":..}}，提取可读消息
+function errMsg(data, fallback) {
+  if (!data) return fallback;
+  const e = data.error;
+  if (typeof e === 'string') return e;
+  if (e && typeof e === 'object') return e.message || e.code || fallback;
+  return data.detail || data.message || fallback;
+}
+
 if (!getToken()) { location.href = '/login'; }
 else {
   document.getElementById('userBadge').textContent = localStorage.getItem(USER_KEY) || 'admin';
@@ -49,7 +58,7 @@ document.getElementById('saveConfigBtn').addEventListener('click', async () => {
     const res = await api('/api/v1/config', { method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     if (res.ok) { msg.className = 'form-msg ok'; msg.textContent = '已保存并热生效'; loadStatus(); }
-    else { msg.className = 'form-msg err'; msg.textContent = data.error || '保存失败'; }
+    else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '保存失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
   btn.disabled = false; btn.textContent = '保存配置';
 });
@@ -122,9 +131,9 @@ function dlModpack(id) { window.open('/api/v1/modpacks/' + id + '/download', '_b
 async function toggleModpack(id, enabled) {
   const res = await api('/api/v1/modpacks/' + id, { method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
   if (res && res.ok) loadModpacks();
-  else { const e = await res.json().catch(() => ({})); alert('操作失败: ' + (e.error || res.status)); }
+  else { const e = await res.json().catch(() => ({})); alert('操作失败: ' + errMsg(e, res.status)); }
 }
-async function delModpack(id) {
+function delModpack(id) {
   if (!confirm('确定删除该整合包？')) return;
   const res = await api('/api/v1/modpacks/' + id, { method: 'DELETE', headers: authHeaders() });
   if (res && res.ok) { loadModpacks(); loadStatus(); } else { alert('删除失败'); }
@@ -140,7 +149,7 @@ document.getElementById('modpackForm').addEventListener('submit', async (e) => {
     const res = await api('/api/v1/modpacks', { method: 'POST', headers: authHeaders(), body: fd });
     const data = await res.json();
     if (res.ok) { msg.className = 'form-msg ok'; msg.textContent = '上传成功'; e.target.reset(); loadModpacks(); loadStatus(); }
-    else { msg.className = 'form-msg err'; msg.textContent = data.error || '上传失败'; }
+    else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '上传失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
   btn.disabled = false; btn.textContent = '上传整合包';
 });
@@ -175,7 +184,7 @@ function dlMod(id) { window.open('/api/v1/mods/' + id + '/download', '_blank'); 
 async function toggleMod(id, enabled) {
   const res = await api('/api/v1/mods/' + id, { method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
   if (res && res.ok) loadMods();
-  else { const e = await res.json().catch(() => ({})); alert('操作失败: ' + (e.error || res.status)); }
+  else { const e = await res.json().catch(() => ({})); alert('操作失败: ' + errMsg(e, res.status)); }
 }
 async function delMod(id) {
   if (!confirm('确定删除该模组？')) return;
@@ -193,7 +202,7 @@ document.getElementById('modForm').addEventListener('submit', async (e) => {
     const res = await api('/api/v1/mods', { method: 'POST', headers: authHeaders(), body: fd });
     const data = await res.json();
     if (res.ok) { msg.className = 'form-msg ok'; msg.textContent = '上传成功'; e.target.reset(); loadMods(); loadStatus(); }
-    else { msg.className = 'form-msg err'; msg.textContent = data.error || '上传失败'; }
+    else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '上传失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
   btn.disabled = false; btn.textContent = '上传模组';
 });
@@ -247,7 +256,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async () => {
   fd.forEach((v, k) => { body[k] = k === 'enabled' ? (fd.get(k) === 'on') : v; });
   const res = await api('/api/v1/' + _editKind + '/' + _editId, { method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (res && res.ok) { closeEditModal(); if (_editKind === 'modpacks') loadModpacks(); else loadMods(); loadStatus(); }
-  else { const e = await res.json().catch(() => ({})); alert('保存失败: ' + (e.error || res.status)); }
+  else { const e = await res.json().catch(() => ({})); alert('保存失败: ' + errMsg(e, res.status)); }
 });
 
 // ---------- 用户管理 ----------
@@ -275,12 +284,12 @@ async function loadUsers() {
 async function toggleRole(u, role) {
   const res = await api('/api/v1/users/' + u, { method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) });
   if (res && res.ok) loadUsers();
-  else { const e = await res.json().catch(() => ({})); alert('操作失败: ' + (e.error || res.status)); }
+  else { const e = await res.json().catch(() => ({})); alert('操作失败: ' + errMsg(e, res.status)); }
 }
-async function delUser(u) {
-  if (!confirm('确定删除用户 ' + u + '？')) return;
-  const res = await api('/api/v1/users/' + u, { method: 'DELETE', headers: authHeaders() });
-  if (res && res.ok) loadUsers(); else { const e = await res.json().catch(() => ({})); alert('删除失败: ' + (e.error || res.status)); }
+async function delUser(id) {
+  if (!confirm('确定删除用户 ' + id + '？')) return;
+  const res = await api('/api/v1/users/' + id, { method: 'DELETE', headers: authHeaders() });
+  if (res && res.ok) loadUsers(); else { const e = await res.json().catch(() => ({})); alert('删除失败: ' + errMsg(e, res.status)); }
 }
 document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -293,7 +302,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     const res = await api('/api/v1/users', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     if (res.ok) { msg.className = 'form-msg ok'; msg.textContent = '已添加' + (data.role === 'admin' ? '（管理员）' : ''); e.target.reset(); loadUsers(); }
-    else { msg.className = 'form-msg err'; msg.textContent = data.error || '添加失败'; }
+    else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '添加失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
   btn.disabled = false;
 });
@@ -314,7 +323,7 @@ document.getElementById('pwdSaveBtn').addEventListener('click', async () => {
     const res = await api('/api/v1/auth/password', { method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ old_password: fd.get('old_password'), new_password: fd.get('new_password') }) });
     const data = await res.json();
     if (res.ok) { document.getElementById('pwdModal').style.display = 'none'; alert('密码已修改'); logout(); }
-    else { msg.className = 'form-msg err'; msg.textContent = data.error || '修改失败'; }
+    else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '修改失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
 });
 
