@@ -133,7 +133,7 @@ async function toggleModpack(id, enabled) {
   if (res && res.ok) loadModpacks();
   else { const e = await res.json().catch(() => ({})); alert('操作失败: ' + errMsg(e, res.status)); }
 }
-function delModpack(id) {
+async function delModpack(id) {
   if (!confirm('确定删除该整合包？')) return;
   const res = await api('/api/v1/modpacks/' + id, { method: 'DELETE', headers: authHeaders() });
   if (res && res.ok) { loadModpacks(); loadStatus(); } else { alert('删除失败'); }
