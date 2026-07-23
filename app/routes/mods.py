@@ -30,6 +30,9 @@ async def upload_mod(
     name: str = Form(...),
     version: str = Form(...),
     game: str = Form(...),
+    game_version: str = Form(""),
+    mod_loader: str = Form("auto"),
+    mod_loader_version: str | None = Form(None),
     modpack_id: str | None = Form(None),
     description: str = Form(""),
 ):
@@ -48,16 +51,42 @@ async def upload_mod(
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(content)
+
+        # 自动识别：表单 game_version 留空或 mod_loader 为 auto 时，解析模组 jar 元数据填充
+        auto_detected = False
+        if not game_version or mod_loader in ("", "auto"):
+            try:
+                from gpm_common import GameAdapterRegistry
+
+                adapter = GameAdapterRegistry.get(game)
+                if adapter is not None and hasattr(adapter, "detect_mod_metadata"):
+                    detected = adapter.detect_mod_metadata(tmp_path)
+                    if detected:
+                        auto_detected = True
+                        if not game_version and detected.get("game_version"):
+                            game_version = detected["game_version"]
+                        if mod_loader in ("", "auto") and detected.get("mod_loader"):
+                            mod_loader = detected["mod_loader"]
+                            if not mod_loader_version and detected.get("mod_loader_version"):
+                                mod_loader_version = detected["mod_loader_version"]
+            except Exception:  # noqa: BLE001
+                pass
+
         meta_fields = {
             "name": name,
             "version": version,
             "game": game,
+            "game_version": game_version,
+            "mod_loader": mod_loader,
+            "mod_loader_version": mod_loader_version,
             "modpack_id": modpack_id,
             "description": description,
         }
         mod = storage.save_mod(meta_fields, tmp_path, file.filename or "mod.jar")
         server_info.record_upload()
-        return mod.model_dump()
+        result = mod.model_dump()
+        result["auto_detected"] = auto_detected
+        return result
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)

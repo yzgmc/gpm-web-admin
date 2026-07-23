@@ -195,13 +195,15 @@ async function loadMods() {
     const d = await res.json();
     const tbody = document.getElementById('modTbody');
     const items = d.mods || [];
-    if (!items.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-row">暂无模组</td></tr>'; return; }
+    if (!items.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-row">暂无模组</td></tr>'; return; }
     tbody.innerHTML = items.map(m => `
       <tr>
         <td title="${m.id}">${shortId(m.id)}</td>
         <td>${m.name}</td>
         <td>${m.version}</td>
         <td>${m.game}</td>
+        <td>${m.game_version || '—'}</td>
+        <td>${m.mod_loader || '—'}</td>
         <td>${fmtBytes(m.file_size)}</td>
         <td>${m.enabled ? '<span class="badge-on">上架</span>' : '<span class="badge-off">下架</span>'}</td>
         <td>
@@ -239,7 +241,11 @@ document.getElementById('modForm').addEventListener('submit', async (e) => {
     const { res, data } = await uploadWithProgress('/api/v1/mods', fd, (pct) => {
       bar.style.width = pct + '%'; ptxt.textContent = Math.round(pct) + '%';
     });
-    if (res.ok) { msg.className = 'form-msg ok'; msg.textContent = '上传成功'; e.target.reset(); loadMods(); loadStatus(); }
+    if (res.ok) {
+      const tip = data.auto_detected ? '上传成功（已自动识别加载器/版本）' : '上传成功';
+      msg.className = 'form-msg ok'; msg.textContent = tip;
+      e.target.reset(); loadMods(); loadStatus();
+    }
     else { msg.className = 'form-msg err'; msg.textContent = errMsg(data, '上传失败'); }
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
   prog.style.display = 'none';
