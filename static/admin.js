@@ -20,41 +20,18 @@ else {
   document.getElementById('logoutBtn').addEventListener('click', logout);
 }
 
-// Tab 切换（顶部 tabs-bar + 抽屉 drawer 共用同一逻辑）
+// Tab 切换
 function switchTab(tab) {
-  // 同步顶部 tabs 和抽屉的高亮状态
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.drawer-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  // 切换面板显隐
   document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
   const panel = document.getElementById('tab-' + tab);
   if (panel) panel.style.display = '';
-  // 按需加载数据
   if (tab === 'users') loadUsers();
   if (tab === 'config') loadConfig();
 }
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
-document.querySelectorAll('.drawer-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    switchTab(btn.dataset.tab);
-    closeDrawer();
-  });
-});
-
-// 抽屉开关
-function openDrawer() {
-  document.getElementById('drawer').classList.add('open');
-  document.getElementById('drawerMask').classList.add('open');
-}
-function closeDrawer() {
-  document.getElementById('drawer').classList.remove('open');
-  document.getElementById('drawerMask').classList.remove('open');
-}
-document.getElementById('menuBtn').addEventListener('click', openDrawer);
-document.getElementById('drawerClose').addEventListener('click', closeDrawer);
-document.getElementById('drawerMask').addEventListener('click', closeDrawer);
 
 // ---------- 配置 ----------
 async function loadConfig() {
