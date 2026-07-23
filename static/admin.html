@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPM 服务端管理</title>
+  <link rel="stylesheet" href="/static/admin.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo">GPM</span>
+      <span class="title">服务端管理</span>
+      <span id="serverKind" class="tag"></span>
+    </div>
+    <div class="topbar-right">
+      <a href="/" class="logout-btn" style="border-color:#3b82f6;color:#3b82f6;text-decoration:none;">返回仪表盘</a>
+      <span id="userBadge" class="user-badge"></span>
+      <button id="changePwdBtn" class="logout-btn" style="border-color:#3b82f6;color:#3b82f6;">改密码</button>
+      <button id="logoutBtn" class="logout-btn">退出</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 状态卡片 -->
+    <section class="status-cards" id="statusCards">
+      <div class="stat-card"><div class="stat-label">服务名称</div><div class="stat-value" id="statName">—</div></div>
+      <div class="stat-card"><div class="stat-label">运行时长</div><div class="stat-value" id="statUptime">—</div></div>
+      <div class="stat-card"><div class="stat-label">整合包数</div><div class="stat-value" id="statModpacks">—</div></div>
+      <div class="stat-card"><div class="stat-label">模组数</div><div class="stat-value" id="statMods">—</div></div>
+      <div class="stat-card"><div class="stat-label">存储占用</div><div class="stat-value" id="statStorage">—</div></div>
+    </section>
+
+    <!-- 选项卡 -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="modpacks">整合包管理</button>
+      <button class="tab-btn" data-tab="mods">模组管理</button>
+      <button class="tab-btn" data-tab="users">用户管理</button>
+      <button class="tab-btn" data-tab="config">配置</button>
+    </div>
+
+    <!-- 整合包管理 -->
+    <section class="panel tab-panel" id="tab-modpacks">
+      <div class="panel-head"><h2>整合包管理</h2><button class="refresh-btn" onclick="loadModpacks()">刷新</button></div>
+      <form id="modpackForm" class="upload-form">
+        <div class="form-row">
+          <label>文件<input type="file" name="file" required /></label>
+          <label>名称<input type="text" name="name" placeholder="TestPack" required /></label>
+          <label>版本<input type="text" name="version" placeholder="1.0" required /></label>
+        </div>
+        <div class="form-row">
+          <label>游戏<input type="text" name="game" placeholder="minecraft" required /></label>
+          <label>游戏版本<input type="text" name="game_version" placeholder="1.20" required /></label>
+          <label>加载器
+            <select name="mod_loader">
+              <option value="vanilla">vanilla</option>
+              <option value="forge">forge</option>
+              <option value="fabric">fabric</option>
+              <option value="quilt">quilt</option>
+            </select>
+          </label>
+          <label>加载器版本<input type="text" name="mod_loader_version" placeholder="可选" /></label>
+        </div>
+        <div class="form-row">
+          <label class="full">描述<input type="text" name="description" placeholder="可选" /></label>
+        </div>
+        <button type="submit" class="btn-upload" id="modpackUploadBtn">上传整合包</button>
+        <span id="modpackMsg" class="form-msg"></span>
+      </form>
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>名称</th><th>版本</th><th>游戏</th><th>游戏版本</th><th>加载器</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="modpackTbody"></tbody>
+      </table>
+    </section>
+
+    <!-- 模组管理 -->
+    <section class="panel tab-panel" id="tab-mods" style="display:none;">
+      <div class="panel-head"><h2>模组管理</h2><button class="refresh-btn" onclick="loadMods()">刷新</button></div>
+      <form id="modForm" class="upload-form">
+        <div class="form-row">
+          <label>文件<input type="file" name="file" required /></label>
+          <label>名称<input type="text" name="name" placeholder="ExampleMod" required /></label>
+          <label>版本<input type="text" name="version" placeholder="1.0" required /></label>
+          <label>游戏<input type="text" name="game" placeholder="minecraft" required /></label>
+        </div>
+        <div class="form-row">
+          <label class="full">描述<input type="text" name="description" placeholder="可选" /></label>
+        </div>
+        <button type="submit" class="btn-upload" id="modUploadBtn">上传模组</button>
+        <span id="modMsg" class="form-msg"></span>
+      </form>
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>名称</th><th>版本</th><th>游戏</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="modTbody"></tbody>
+      </table>
+    </section>
+
+    <!-- 用户管理 -->
+    <section class="panel tab-panel" id="tab-users" style="display:none;">
+      <div class="panel-head"><h2>用户管理</h2><button class="refresh-btn" onclick="loadUsers()">刷新</button></div>
+      <form id="addUserForm" class="upload-form">
+        <div class="form-row">
+          <label>用户名<input type="text" name="username" placeholder="newuser" required /></label>
+          <label>密码<input type="password" name="password" placeholder="至少6位" required /></label>
+          <label style="flex:0 0 auto; align-self:flex-end;"><input type="checkbox" name="is_admin" /> 设为管理员</label>
+        </div>
+        <button type="submit" class="btn-upload" id="addUserBtn">添加用户</button>
+        <span id="userMsg" class="form-msg"></span>
+        <div class="hint" style="margin-top:8px;">管理员账号会自动同步到网页后台，可用同一账号密码登录后台。</div>
+      </form>
+      <table class="data-table">
+        <thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead>
+        <tbody id="userTbody"></tbody>
+      </table>
+    </section>
+
+    <!-- 配置 -->
+    <section class="panel tab-panel" id="tab-config" style="display:none;">
+      <div class="panel-head"><h2>运行时配置</h2><button class="refresh-btn" onclick="loadConfig()">刷新</button></div>
+      <div class="upload-form">
+        <div class="form-row">
+          <label class="full">后台地址 (admin_url)<input type="text" id="cfgAdminUrl" placeholder="http://192.168.1.100:8080，留空则不上报" /></label>
+        </div>
+        <div class="form-row">
+          <label class="full">本服务对外地址 (public_base_url)<input type="text" id="cfgPublicBaseUrl" placeholder="http://你的IP:8000，上报给后台的可访问地址" /></label>
+        </div>
+        <div class="form-row">
+          <label>服务名称 (server_name)<input type="text" id="cfgServerName" /></label>
+          <label>上报间隔(秒) (reporter_interval)<input type="number" id="cfgInterval" min="3" step="1" /></label>
+        </div>
+        <button type="button" class="btn-upload" id="saveConfigBtn">保存配置</button>
+        <span id="configMsg" class="form-msg"></span>
+        <div class="hint" style="margin-top:14px;">说明：修改后台地址后会立即重启上报线程热生效，无需重启服务。配置持久化到 data/server.json。</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 编辑对话框 -->
+  <div id="editModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-head"><h3 id="editModalTitle">编辑</h3><button class="modal-close" onclick="closeEditModal()">×</button></div>
+      <form id="editForm"></form>
+      <div class="modal-foot"><button class="btn-upload" id="editSaveBtn">保存</button><button class="refresh-btn" onclick="closeEditModal()">取消</button></div>
+    </div>
+  </div>
+
+  <!-- 改密码对话框 -->
+  <div id="pwdModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-head"><h3>修改密码</h3><button class="modal-close" onclick="document.getElementById('pwdModal').style.display='none'">×</button></div>
+      <form id="pwdForm" class="upload-form">
+        <div class="form-row"><label class="full">原密码<input type="password" name="old_password" required /></label></div>
+        <div class="form-row"><label class="full">新密码<input type="password" name="new_password" placeholder="至少6位" required /></label></div>
+        <div class="form-row"><label class="full">确认新密码<input type="password" name="confirm" required /></label></div>
+        <span id="pwdMsg" class="form-msg"></span>
+      </form>
+      <div class="modal-foot"><button class="btn-upload" id="pwdSaveBtn">确认修改</button><button class="refresh-btn" onclick="document.getElementById('pwdModal').style.display='none'">取消</button></div>
+    </div>
+  </div>
+
+  <script src="/static/admin.js"></script>
+</body>
+</html>

@@ -3,66 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>登录 · Game Push Manager 网页后台</title>
-  <link rel="stylesheet" href="/static/style.css" />
-  <style>
-    .login-wrap {
-      max-width: 360px;
-      margin: 80px auto 0;
-      background: #fff;
-      border-radius: 10px;
-      padding: 32px 28px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    }
-    .login-wrap .logo {
-      display: inline-block;
-      background: #3b82f6;
-      color: #fff;
-      font-weight: 700;
-      padding: 6px 14px;
-      border-radius: 6px;
-      letter-spacing: 1px;
-      margin-bottom: 18px;
-    }
-    .login-wrap h1 { font-size: 20px; margin-bottom: 4px; color: #0f172a; }
-    .login-wrap .subtitle { font-size: 13px; color: #64748b; margin-bottom: 22px; }
-    .login-wrap label { display: block; font-size: 13px; color: #475569; margin: 14px 0 6px; }
-    .login-wrap input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-    }
-    .login-wrap input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-    .login-wrap .btn {
-      width: 100%;
-      margin-top: 22px;
-      padding: 11px;
-      background: #3b82f6;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .login-wrap .btn:hover { background: #2563eb; }
-    .login-wrap .btn:disabled { background: #94a3b8; cursor: not-allowed; }
-    .login-wrap .err {
-      margin-top: 14px;
-      color: #ef4444;
-      font-size: 13px;
-      min-height: 18px;
-    }
-    .login-wrap .hint { margin-top: 16px; font-size: 12px; color: #94a3b8; text-align: center; }
-  </style>
+  <title>登录 · GPM 服务端管理</title>
+  <link rel="stylesheet" href="/static/admin.css" />
 </head>
 <body>
   <div class="login-wrap">
     <span class="logo">GPM</span>
-    <h1>网页后台登录</h1>
+    <h1>服务端管理登录</h1>
     <div class="subtitle">Game Push Manager · 管理员登录</div>
     <form id="loginForm" autocomplete="off">
       <label for="username">用户名</label>
@@ -75,20 +22,14 @@
     <div class="hint">默认账号 admin / admin123（请尽快修改）</div>
   </div>
   <script>
-    // 已登录则直接进仪表盘
-    if (localStorage.getItem('gpm_token')) {
-      location.href = '/';
-    }
-
+    if (localStorage.getItem('gpm_token')) location.href = '/admin';
     const form = document.getElementById('loginForm');
     const btn = document.getElementById('submitBtn');
     const errMsg = document.getElementById('errMsg');
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       errMsg.textContent = '';
-      btn.disabled = true;
-      btn.textContent = '登录中...';
+      btn.disabled = true; btn.textContent = '登录中...';
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
       try {
@@ -98,19 +39,13 @@
           body: JSON.stringify({ username, password }),
         });
         const data = await res.json();
-        if (!res.ok) {
-          errMsg.textContent = data.error || '登录失败';
-          btn.disabled = false;
-          btn.textContent = '登录';
-          return;
-        }
+        if (!res.ok) { errMsg.textContent = data.error || '登录失败'; btn.disabled = false; btn.textContent = '登录'; return; }
         localStorage.setItem('gpm_token', data.token);
         localStorage.setItem('gpm_user', data.username);
-        location.href = '/';
+        location.href = '/admin';
       } catch (err) {
         errMsg.textContent = '网络错误：' + err;
-        btn.disabled = false;
-        btn.textContent = '登录';
+        btn.disabled = false; btn.textContent = '登录';
       }
     });
   </script>

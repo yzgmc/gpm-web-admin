@@ -19,7 +19,15 @@ from gpm_common.heartbeat import Heartbeat
 from app.config import settings
 
 
-STALE_SECONDS = 30.0  # 超过该时长未上报视为离线
+STALE_SECONDS = 30.0  # 兜底默认；运行时用 settings.stale_seconds
+
+
+def _stale_threshold() -> float:
+    try:
+        from app.config import settings
+        return settings.stale_seconds
+    except Exception:
+        return STALE_SECONDS
 
 
 def _now() -> datetime:
@@ -46,7 +54,7 @@ class StoredReport:
     def is_stale(self, now: Optional[datetime] = None) -> bool:
         now = now or _now()
         age = (now - self.last_seen_at).total_seconds()
-        return age > STALE_SECONDS
+        return age > _stale_threshold()
 
     def light_level(self) -> str:
         """返回该上报端的灯色。离线视为红灯；未上报灯色视为 off。"""
@@ -67,7 +75,7 @@ class StoredReport:
         if online and self.last_heartbeat.light is not None:
             reason = self.last_heartbeat.light.reason
         elif not online:
-            reason = f"超过 {int(STALE_SECONDS)}s 未上报心跳"
+            reason = f"超过 {int(_stale_threshold())}s 未上报心跳"
         return {
             "reporter_id": self.reporter_id,
             "kind": self.kind,
