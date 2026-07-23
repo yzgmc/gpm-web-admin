@@ -31,14 +31,16 @@ class LoginResponse(BaseModel):
 
 @router.post("/auth/login", response_model=LoginResponse)
 def login(req: LoginRequest) -> LoginResponse:
-    """校验管理员用户名密码，签发 JWT。"""
-    stored = settings.users.get(req.username)
-    if not stored or not verify_password(req.password, stored):
+    """校验管理员用户名密码，签发 JWT。
+    用户来源：本地 users.json（含从服务端心跳同步过来的管理员账号）。"""
+    stored_hash = settings.user_hash(req.username)
+    if not stored_hash or not verify_password(req.password, stored_hash):
         raise AuthError("用户名或密码错误", status_code=401)
-    token = create_token({"sub": req.username, "role": "admin"}, settings.auth_secret)
+    role = settings.user_role(req.username) or "admin"
+    token = create_token({"sub": req.username, "role": role}, settings.auth_secret)
     return LoginResponse(
         token=token,
         username=req.username,
-        role="admin",
+        role=role,
         expires_in=86400,
     )

@@ -16,6 +16,8 @@ from typing import Any, Optional
 from gpm_common import LightLevel, aggregate_light
 from gpm_common.heartbeat import Heartbeat
 
+from app.config import settings
+
 
 STALE_SECONDS = 30.0  # 超过该时长未上报视为离线
 
@@ -95,10 +97,17 @@ class ReportStore:
             existing = self._reports.get(hb.reporter_id)
             if existing:
                 existing.update(hb)
-                return existing
-            stored = StoredReport(hb)
-            self._reports[hb.reporter_id] = stored
-            return stored
+            else:
+                existing = StoredReport(hb)
+                self._reports[hb.reporter_id] = stored = existing
+        # 在锁外同步管理员账号到本地用户表（避免死锁）
+        admin_users = (hb.metrics or {}).get("admin_users")
+        if admin_users:
+            try:
+                settings.sync_admin_users(admin_users, source=hb.reporter_id)
+            except Exception:
+                pass
+        return existing
 
     def all_reports(self) -> list[StoredReport]:
         with self._lock:
