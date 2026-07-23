@@ -49,7 +49,11 @@
           <label>版本<input type="text" name="version" placeholder="1.0" required /></label>
         </div>
         <div class="form-row">
-          <label>游戏<input type="text" name="game" placeholder="minecraft" required /></label>
+          <label>游戏
+            <select name="game" id="modpackGame" required>
+              <option value="minecraft">minecraft</option>
+            </select>
+          </label>
           <label>游戏版本<input type="text" name="game_version" placeholder="1.20" required /></label>
           <label>加载器
             <select name="mod_loader">
@@ -81,7 +85,11 @@
           <label>文件<input type="file" name="file" required /></label>
           <label>名称<input type="text" name="name" placeholder="ExampleMod" required /></label>
           <label>版本<input type="text" name="version" placeholder="1.0" required /></label>
-          <label>游戏<input type="text" name="game" placeholder="minecraft" required /></label>
+          <label>游戏
+            <select name="game" id="modGame" required>
+              <option value="minecraft">minecraft</option>
+            </select>
+          </label>
         </div>
         <div class="form-row">
           <label class="full">描述<input type="text" name="description" placeholder="可选" /></label>

@@ -207,6 +207,22 @@ document.getElementById('modForm').addEventListener('submit', async (e) => {
   btn.disabled = false; btn.textContent = '上传模组';
 });
 
+// ---------- 游戏列表（填充上传表单的下拉选项）----------
+async function loadGames() {
+  try {
+    const res = await api('/api/v1/games');
+    if (!res) return;
+    const d = await res.json();
+    const games = d.games || [];
+    const items = games.length ? games : [{ name: 'minecraft', display_name: 'Minecraft' }];
+    const opts = items.map(g => `<option value="${g.name}">${g.display_name || g.name}</option>`).join('');
+    const mpSel = document.getElementById('modpackGame');
+    const modSel = document.getElementById('modGame');
+    if (mpSel) mpSel.innerHTML = opts;
+    if (modSel) modSel.innerHTML = opts;
+  } catch (e) { console.error(e); }
+}
+
 // ---------- 编辑对话框 ----------
 let _editKind = '', _editId = '';
 function editModpack(m) {
@@ -328,5 +344,5 @@ document.getElementById('pwdSaveBtn').addEventListener('click', async () => {
 });
 
 // 首次加载 + 定时刷新
-loadStatus(); loadModpacks(); loadMods();
+loadStatus(); loadModpacks(); loadMods(); loadGames();
 setInterval(loadStatus, 10000);
