@@ -37,6 +37,7 @@
       <button class="tab-btn" data-tab="mods">模组管理</button>
       <button class="tab-btn" data-tab="users">用户管理</button>
       <button class="tab-btn" data-tab="config">配置</button>
+      <button class="tab-btn" data-tab="update">系统更新</button>
     </div>
 
     <!-- 整合包管理 -->
@@ -159,6 +160,37 @@
         <button type="button" class="btn-upload" id="saveConfigBtn">保存配置</button>
         <span id="configMsg" class="form-msg"></span>
         <div class="hint" style="margin-top:14px;">说明：修改后台地址后会立即重启上报线程热生效，无需重启服务。配置持久化到 data/server.json。</div>
+      </div>
+    </section>
+
+    <!-- 系统更新 -->
+    <section class="panel tab-panel" id="tab-update" style="display:none;">
+      <div class="panel-head"><h2>系统更新</h2><button class="refresh-btn" onclick="loadUpdateStatus()">刷新</button></div>
+      <div class="upload-form">
+        <div class="form-row">
+          <label>当前版本 (local)<input type="text" id="updLocalSha" readonly /></label>
+          <label>远程版本 (remote)<input type="text" id="updRemoteSha" readonly /></label>
+          <label>分支<input type="text" id="updBranch" readonly /></label>
+        </div>
+        <div class="form-row">
+          <label>上次检查时间<input type="text" id="updLastCheck" readonly /></label>
+          <label>检查结果<input type="text" id="updResult" readonly /></label>
+          <label>累计更新次数<input type="text" id="updCount" readonly /></label>
+        </div>
+        <div class="form-row">
+          <label style="flex:0 0 auto; align-self:flex-end;">
+            <input type="checkbox" id="updAutoToggle" onchange="toggleAutoUpdate(this.checked)" /> 自动更新（每5分钟检查）
+          </label>
+        </div>
+        <div class="form-row" style="gap:8px;">
+          <button type="button" class="btn-upload" id="checkUpdateBtn" onclick="checkUpdate()">检查更新</button>
+          <button type="button" class="btn-edit" id="applyUpdateBtn" onclick="applyUpdate()" style="padding:9px 20px;">立即应用更新</button>
+        </div>
+        <span id="updMsg" class="form-msg"></span>
+        <div class="hint" style="margin-top:14px;">
+          说明：自动更新每5分钟检查 GitHub 仓库（gpm-web-admin + gpm-common），有新提交时自动拉取并重启服务。
+          手动"检查更新"仅 fetch 比较 SHA；"立即应用更新"会 git pull + 重装依赖 + 重启服务。
+        </div>
       </div>
     </section>
   </main>

@@ -388,6 +388,111 @@ document.getElementById('pwdSaveBtn').addEventListener('click', async () => {
   } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
 });
 
+// ---------- 系统更新 ----------
+const _UPDATE_RESULT_TEXT = {
+  pending: '待检查',
+  up_to_date: '已是最新',
+  update_available: '有新版本',
+  updating: '更新中',
+  updated: '已更新',
+  failed: '失败',
+};
+
+async function loadUpdateStatus() {
+  try {
+    const res = await api('/api/v1/update/status', { headers: authHeaders() });
+    if (!res) return;
+    const d = await res.json();
+    document.getElementById('updLocalSha').value = d.local_sha || '—';
+    document.getElementById('updRemoteSha').value = d.remote_sha || '—';
+    document.getElementById('updBranch').value = d.branch || '';
+    document.getElementById('updLastCheck').value = d.last_check_str || '—';
+    document.getElementById('updResult').value = _UPDATE_RESULT_TEXT[d.last_result] || d.last_result || '—';
+    document.getElementById('updCount').value = d.update_count != null ? d.update_count : 0;
+    const toggle = document.getElementById('updAutoToggle');
+    if (toggle) toggle.checked = !!d.auto_enabled;
+    // 有更新时高亮"应用"按钮
+    const applyBtn = document.getElementById('applyUpdateBtn');
+    if (applyBtn) applyBtn.style.borderColor = d.last_result === 'update_available' ? '#f59e0b' : '';
+  } catch (e) { console.error(e); }
+}
+
+async function checkUpdate() {
+  const btn = document.getElementById('checkUpdateBtn');
+  const msg = document.getElementById('updMsg');
+  btn.disabled = true; btn.textContent = '检查中…';
+  msg.className = 'form-msg'; msg.textContent = '';
+  try {
+    const res = await api('/api/v1/update/check', { method: 'POST', headers: authHeaders() });
+    if (!res) return;
+    const data = await res.json();
+    if (res.ok) {
+      msg.className = 'form-msg ok';
+      msg.textContent = data.message || (data.has_update ? '有新版本可用' : '已是最新版本');
+      loadUpdateStatus();
+    } else {
+      msg.className = 'form-msg err';
+      msg.textContent = errMsg(data, '检查失败');
+    }
+  } catch (err) { msg.className = 'form-msg err'; msg.textContent = '网络错误：' + err; }
+  btn.disabled = false; btn.textContent = '检查更新';
+}
+
+async function applyUpdate() {
+  if (!confirm('确定立即应用更新？服务将拉取最新代码并自动重启，期间会短暂不可访问。')) return;
+  const btn = document.getElementById('applyUpdateBtn');
+  const msg = document.getElementById('updMsg');
+  btn.disabled = true; btn.textContent = '更新中…';
+  msg.className = 'form-msg'; msg.textContent = '正在拉取更新并重启，请稍候…';
+  try {
+    const res = await api('/api/v1/update/apply', { method: 'POST', headers: authHeaders() });
+    if (!res) return;
+    const data = await res.json();
+    if (res.ok) {
+      msg.className = 'form-msg ok';
+      msg.textContent = (data.message || '更新完成') + '，服务正在重启，约 5 秒后自动刷新…';
+      // 服务重启后自动刷新页面
+      setTimeout(() => { location.reload(); }, 6000);
+    } else {
+      msg.className = 'form-msg err';
+      msg.textContent = errMsg(data, '应用失败');
+      btn.disabled = false; btn.textContent = '立即应用更新';
+    }
+  } catch (err) {
+    // 服务可能在响应返回前就退出重启，这里当作"正在重启"处理
+    msg.className = 'form-msg ok';
+    msg.textContent = '服务正在重启，约 5 秒后自动刷新…';
+    setTimeout(() => { location.reload(); }, 6000);
+  }
+}
+
+async function toggleAutoUpdate(enabled) {
+  const msg = document.getElementById('updMsg');
+  msg.className = 'form-msg'; msg.textContent = '';
+  try {
+    const res = await api('/api/v1/update/auto', {
+      method: 'PATCH',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    });
+    if (!res) return;
+    const data = await res.json();
+    if (res.ok) {
+      msg.className = 'form-msg ok';
+      msg.textContent = '自动更新已' + (enabled ? '开启' : '关闭');
+    } else {
+      msg.className = 'form-msg err';
+      msg.textContent = errMsg(data, '操作失败');
+      document.getElementById('updAutoToggle').checked = !enabled;
+    }
+  } catch (err) {
+    msg.className = 'form-msg err';
+    msg.textContent = '网络错误：' + err;
+    document.getElementById('updAutoToggle').checked = !enabled;
+  }
+}
+
 // 首次加载 + 定时刷新
-loadStatus(); loadModpacks(); loadMods(); loadGames();
+loadStatus(); loadModpacks(); loadMods(); loadGames(); loadUpdateStatus();
 setInterval(loadStatus, 10000);
+setInterval(loadUpdateStatus, 30000);

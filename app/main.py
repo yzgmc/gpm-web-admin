@@ -24,8 +24,9 @@ from gpm_common import API_VERSION, AuthError, GamePushError
 
 from app.config import settings
 from app.reporter import start_reporter, stop_reporter
-from app.routes import auth, config, dashboard, games, mods, modpacks, report, status, sync
+from app.routes import auth, config, dashboard, games, mods, modpacks, report, status, sync, update
 from app.server_info import server_info
+from app.updater import start_updater, stop_updater
 
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -75,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(sync.router)         # 客户端同步/下载
     app.include_router(modpacks.router)     # 整合包 CRUD
     app.include_router(mods.router)         # 模组 CRUD
+    app.include_router(update.router)       # 自动更新管理
 
     # 静态资源
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -83,10 +85,13 @@ def create_app() -> FastAPI:
     def _start_reporter():
         # 启动自上报线程：默认 admin_url 指向自己，后台自动纳入本服务
         start_reporter()
+        # 启动自动更新检查线程（每5分钟检查 GitHub 仓库更新）
+        start_updater()
 
     @app.on_event("shutdown")
     def _stop_reporter():
         stop_reporter()
+        stop_updater()
 
     @app.get("/")
     def root():
