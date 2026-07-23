@@ -9,17 +9,34 @@
 <body>
   <header class="topbar">
     <div class="topbar-left">
+      <button id="menuBtn" class="menu-btn" aria-label="菜单">☰</button>
       <span class="logo">GPM</span>
       <span class="title">服务端管理</span>
       <span id="serverKind" class="tag"></span>
     </div>
     <div class="topbar-right">
-      <a href="/" class="logout-btn" style="border-color:#3b82f6;color:#3b82f6;text-decoration:none;">返回仪表盘</a>
+      <a href="/" class="nav-link">返回仪表盘</a>
       <span id="userBadge" class="user-badge"></span>
-      <button id="changePwdBtn" class="logout-btn" style="border-color:#3b82f6;color:#3b82f6;">改密码</button>
+      <button id="changePwdBtn" class="nav-link">改密码</button>
       <button id="logoutBtn" class="logout-btn">退出</button>
     </div>
   </header>
+
+  <!-- 抽屉式导航 -->
+  <div id="drawerMask" class="drawer-mask"></div>
+  <aside id="drawer" class="drawer">
+    <div class="drawer-head">
+      <span class="drawer-title">导航菜单</span>
+      <button id="drawerClose" class="drawer-close" aria-label="关闭">×</button>
+    </div>
+    <nav class="drawer-nav" id="drawerNav">
+      <button class="drawer-item active" data-tab="modpacks">整合包管理</button>
+      <button class="drawer-item" data-tab="mods">模组管理</button>
+      <button class="drawer-item" data-tab="users">用户管理</button>
+      <button class="drawer-item" data-tab="config">配置</button>
+      <button class="drawer-item" data-tab="update">系统更新</button>
+    </nav>
+  </aside>
 
   <main class="container">
     <!-- 状态卡片 -->
