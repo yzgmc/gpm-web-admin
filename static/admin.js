@@ -38,7 +38,7 @@ async function loadConfig() {
 document.getElementById('saveConfigBtn').addEventListener('click', async () => {
   const btn = document.getElementById('saveConfigBtn');
   const msg = document.getElementById('configMsg');
-  btn.disabled = true; btn.textContent = '保存中...'; msg.className = 'form-msg'; msg.textContent = '';
+  btn.disabled = true; btn.textContent = '保存中…'; msg.className = 'form-msg'; msg.textContent = '';
   const body = {
     admin_url: document.getElementById('cfgAdminUrl').value.trim(),
     public_base_url: document.getElementById('cfgPublicBaseUrl').value.trim(),
@@ -134,7 +134,7 @@ document.getElementById('modpackForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('modpackUploadBtn');
   const msg = document.getElementById('modpackMsg');
-  btn.disabled = true; btn.textContent = '上传中...'; msg.className = 'form-msg'; msg.textContent = '';
+  btn.disabled = true; btn.textContent = '上传中…'; msg.className = 'form-msg'; msg.textContent = '';
   const fd = new FormData(e.target);
   try {
     const res = await api('/api/v1/modpacks', { method: 'POST', headers: authHeaders(), body: fd });
@@ -187,7 +187,7 @@ document.getElementById('modForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('modUploadBtn');
   const msg = document.getElementById('modMsg');
-  btn.disabled = true; btn.textContent = '上传中...'; msg.className = 'form-msg'; msg.textContent = '';
+  btn.disabled = true; btn.textContent = '上传中…'; msg.className = 'form-msg'; msg.textContent = '';
   const fd = new FormData(e.target);
   try {
     const res = await api('/api/v1/mods', { method: 'POST', headers: authHeaders(), body: fd });

@@ -1,11 +1,13 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
+:root { color-scheme: light; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   background: #f5f7fa;
   color: #1f2933;
   line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
 }
+button, a { touch-action: manipulation; }
 
 .topbar {
   display: flex;
@@ -100,14 +102,22 @@ h2 { font-size: 16px; margin-bottom: 12px; color: #334155; }
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
 .stat-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
-.stat-value { font-size: 24px; font-weight: 700; color: #0f172a; }
+.stat-value { font-size: 24px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 
-.reporter-card { border-left: 4px solid #cbd5e1; }
+.reporter-card {
+  border-left: 4px solid #cbd5e1;
+  background: #fff; border-radius: 8px; padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.3s;
+}
+.reporter-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .reporter-card.online { border-left-color: #22c55e; }
 .reporter-card.offline { border-left-color: #ef4444; }
 
@@ -163,10 +173,23 @@ h2 { font-size: 16px; margin-bottom: 12px; color: #334155; }
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 .logout-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+.logout-btn:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
 .nav-link {
   color: #3b82f6; text-decoration: none; font-size: 12px;
   padding: 3px 12px; border: 1px solid #3b82f6; border-radius: 6px;
+  transition: background-color 0.15s, color 0.15s;
 }
 .nav-link:hover { background: #3b82f6; color: #fff; }
+.nav-link:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+
+/* 尊重用户的减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -13,11 +13,11 @@
     <div class="subtitle">Game Push Manager · 管理员登录</div>
     <form id="loginForm" autocomplete="off">
       <label for="username">用户名</label>
-      <input id="username" name="username" type="text" required autofocus />
+      <input id="username" name="username" type="text" required autofocus spellcheck="false" autocomplete="username" />
       <label for="password">密码</label>
-      <input id="password" name="password" type="password" required />
+      <input id="password" name="password" type="password" required autocomplete="current-password" />
       <button class="btn" id="submitBtn" type="submit">登录</button>
-      <div class="err" id="errMsg"></div>
+      <div class="err" id="errMsg" aria-live="polite"></div>
     </form>
     <div class="hint">默认账号 admin / admin123（请尽快修改）</div>
   </div>
@@ -29,7 +29,7 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       errMsg.textContent = '';
-      btn.disabled = true; btn.textContent = '登录中...';
+      btn.disabled = true; btn.textContent = '登录中…';
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
       try {
