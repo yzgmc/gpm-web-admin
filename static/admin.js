@@ -15,18 +15,27 @@ function errMsg(data, fallback) {
   return data.detail || data.message || fallback;
 }
 
-// 后台仅管理员可进入：无 token 或非 admin 角色 → 跳回登录页
+// 后台服务端管理界面：管理员与普通用户均可进入，但权限不同。
+//   管理员 → 可见全部功能（整合包/模组/用户/配置/系统更新），可前往仪表盘
+//   普通用户 → 仅浏览整合包/模组列表（只读），管理类选项卡与上传表单隐藏，无法前往仪表盘
+let _isAdmin = localStorage.getItem(ROLE_KEY) === 'admin';
+
 if (!getToken()) { location.href = '/login'; }
-else if (localStorage.getItem(ROLE_KEY) !== 'admin') {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  localStorage.removeItem(ROLE_KEY);
-  alert('该账号为普通用户，无后台管理权限。');
-  location.href = '/login';
-}
 else {
   document.getElementById('userBadge').textContent = localStorage.getItem(USER_KEY) || 'admin';
   document.getElementById('logoutBtn').addEventListener('click', logout);
+  if (!_isAdmin) {
+    // 普通用户：隐藏“返回仪表盘”链接（无权访问仪表盘）
+    const dashLink = document.querySelector('a.nav-link[href="/"]');
+    if (dashLink) dashLink.style.display = 'none';
+    // 隐藏管理类选项卡：用户管理 / 配置 / 系统更新（普通用户无权限）
+    ['users', 'config', 'update'].forEach(t => {
+      const btn = document.querySelector(`.tab-btn[data-tab="${t}"]`);
+      if (btn) btn.style.display = 'none';
+    });
+    // 隐藏上传表单（普通用户无上传/修改权限）
+    document.querySelectorAll('.upload-form').forEach(f => f.style.display = 'none');
+  }
 }
 
 // Tab 切换
@@ -154,9 +163,10 @@ async function loadModpacks() {
         <td>${m.enabled ? '<span class="badge-on">上架</span>' : '<span class="badge-off">下架</span>'}</td>
         <td>
           <button class="btn-dl" onclick="dlModpack('${m.id}')">下载</button>
+          ${_isAdmin ? `
           <button class="btn-edit" onclick="editModpack(${JSON.stringify(m).replace(/"/g,'&quot;')})">编辑</button>
           <button class="btn-toggle" onclick="toggleModpack('${m.id}', ${!m.enabled})">${m.enabled ? '下架' : '上架'}</button>
-          <button class="btn-del" onclick="delModpack('${m.id}')">删除</button>
+          <button class="btn-del" onclick="delModpack('${m.id}')">删除</button>` : ''}
         </td>
       </tr>`).join('');
   } catch (e) { console.error(e); }
@@ -235,9 +245,10 @@ async function loadMods() {
         <td>${m.enabled ? '<span class="badge-on">上架</span>' : '<span class="badge-off">下架</span>'}</td>
         <td>
           <button class="btn-dl" onclick="dlMod('${m.id}')">下载</button>
+          ${_isAdmin ? `
           <button class="btn-edit" onclick="editMod(${JSON.stringify(m).replace(/"/g,'&quot;')})">编辑</button>
           <button class="btn-toggle" onclick="toggleMod('${m.id}', ${!m.enabled})">${m.enabled ? '下架' : '上架'}</button>
-          <button class="btn-del" onclick="delMod('${m.id}')">删除</button>
+          <button class="btn-del" onclick="delMod('${m.id}')">删除</button>` : ''}
         </td>
       </tr>`).join('');
   } catch (e) { console.error(e); }
@@ -528,7 +539,8 @@ async function toggleAutoUpdate(enabled) {
   }
 }
 
-// 首次加载 + 定时刷新
-loadStatus(); loadModpacks(); loadMods(); loadGames(); loadUpdateStatus();
+// 首次加载 + 定时刷新（系统更新状态仅管理员加载，普通用户无该权限）
+loadStatus(); loadModpacks(); loadMods(); loadGames();
+if (_isAdmin) loadUpdateStatus();
 setInterval(loadStatus, 10000);
-setInterval(loadUpdateStatus, 30000);
+if (_isAdmin) setInterval(loadUpdateStatus, 30000);
