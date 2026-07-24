@@ -109,6 +109,13 @@
             </select>
           </label>
           <label>加载器版本<input type="text" name="mod_loader_version" placeholder="留空自动识别" /></label>
+          <label class="full">所属整合包
+            <select name="modpack_id" id="modModpackSelect">
+              <option value="">不关联整合包（独立模组）</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
           <label class="full">描述<input type="text" name="description" placeholder="可选" /></label>
         </div>
         <button type="submit" class="btn-upload" id="modUploadBtn">上传模组</button>
@@ -119,7 +126,7 @@
         </div>
       </form>
       <table class="data-table">
-        <thead><tr><th>ID</th><th>名称</th><th>版本</th><th>游戏</th><th>游戏版本</th><th>加载器</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>
+        <thead><tr><th>ID</th><th>名称</th><th>版本</th><th>游戏</th><th>游戏版本</th><th>加载器</th><th>所属整合包</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>
         <tbody id="modTbody"></tbody>
       </table>
     </section>

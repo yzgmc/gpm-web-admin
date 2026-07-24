@@ -189,14 +189,30 @@ document.getElementById('modpackForm').addEventListener('submit', async (e) => {
 });
 
 // ---------- 模组 ----------
+// 整合包 id -> 名称 映射，用于模组列表/编辑显示所属整合包
+let _modpackMap = {};
 async function loadMods() {
   try {
+    // 先拉整合包列表，构建 id->name 映射，并填充上传表单的所属整合包下拉
+    const mpRes = await api('/api/v1/modpacks');
+    if (mpRes) {
+      const mpData = await mpRes.json();
+      const mps = mpData.modpacks || [];
+      _modpackMap = {};
+      mps.forEach(mp => { _modpackMap[mp.id] = `${mp.name} v${mp.version}`; });
+      const sel = document.getElementById('modModpackSelect');
+      if (sel) {
+        sel.innerHTML = '<option value="">不关联整合包（独立模组）</option>' +
+          mps.map(mp => `<option value="${mp.id}">${mp.name} v${mp.version}</option>`).join('');
+      }
+    }
+
     const res = await api('/api/v1/mods');
     if (!res) return;
     const d = await res.json();
     const tbody = document.getElementById('modTbody');
     const items = d.mods || [];
-    if (!items.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-row">暂无模组</td></tr>'; return; }
+    if (!items.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-row">暂无模组</td></tr>'; return; }
     tbody.innerHTML = items.map(m => `
       <tr>
         <td title="${m.id}">${shortId(m.id)}</td>
@@ -205,6 +221,7 @@ async function loadMods() {
         <td>${m.game}</td>
         <td>${m.game_version || '—'}</td>
         <td>${m.mod_loader || '—'}</td>
+        <td>${m.modpack_id ? (_modpackMap[m.modpack_id] || shortId(m.modpack_id)) : '<span style="color:#48484A">—</span>'}</td>
         <td>${fmtBytes(m.file_size)}</td>
         <td>${m.enabled ? '<span class="badge-on">上架</span>' : '<span class="badge-off">下架</span>'}</td>
         <td>
@@ -286,10 +303,16 @@ function editModpack(m) {
 }
 function editMod(m) {
   _editKind = 'mods'; _editId = m.id;
+  // 构建所属整合包下拉选项：不关联 + 已知整合包
+  const mpOpts = [{ v: '', label: '不关联整合包（独立模组）' }];
+  Object.entries(_modpackMap).forEach(([id, name]) => mpOpts.push({ v: id, label: name }));
   openEditModal('编辑模组', [
     { k: 'name', label: '名称', v: m.name },
     { k: 'version', label: '版本', v: m.version },
     { k: 'game', label: '游戏', v: m.game },
+    { k: 'game_version', label: '游戏版本', v: m.game_version || '' },
+    { k: 'mod_loader', label: '加载器', v: m.mod_loader || 'vanilla', select: ['vanilla','forge','fabric','quilt'] },
+    { k: 'modpack_id', label: '所属整合包', v: m.modpack_id || '', objSelect: mpOpts },
     { k: 'description', label: '描述', v: m.description },
     { k: 'enabled', label: '上架', v: m.enabled, bool: true },
   ]);
@@ -304,6 +327,9 @@ function openEditModal(title, fields) {
     }
     if (f.select) {
       return `<div class="form-row"><label class="full">${f.label}<select name="${f.k}">${f.select.map(o => `<option value="${o}" ${o === f.v ? 'selected' : ''}>${o}</option>`).join('')}</select></label></div>`;
+    }
+    if (f.objSelect) {
+      return `<div class="form-row"><label class="full">${f.label}<select name="${f.k}">${f.objSelect.map(o => `<option value="${o.v}" ${o.v === f.v ? 'selected' : ''}>${o.label}</option>`).join('')}</select></label></div>`;
     }
     return `<div class="form-row"><label class="full">${f.label}<input type="text" name="${f.k}" value="${(f.v ?? '').toString().replace(/"/g, '&quot;')}" /></label></div>`;
   }).join('');
