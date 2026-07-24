@@ -1,9 +1,10 @@
 const TOKEN_KEY = 'gpm_token';
 const USER_KEY = 'gpm_user';
+const ROLE_KEY = 'gpm_role';
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 function authHeaders() { return { 'Authorization': 'Bearer ' + getToken() }; }
-function logout() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); location.href = '/login'; }
+function logout() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem(ROLE_KEY); location.href = '/login'; }
 
 // 后端错误体格式：{"error":{"code":..,"message":..,"details":..}}，提取可读消息
 function errMsg(data, fallback) {
@@ -14,7 +15,15 @@ function errMsg(data, fallback) {
   return data.detail || data.message || fallback;
 }
 
+// 后台仅管理员可进入：无 token 或非 admin 角色 → 跳回登录页
 if (!getToken()) { location.href = '/login'; }
+else if (localStorage.getItem(ROLE_KEY) !== 'admin') {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(ROLE_KEY);
+  alert('该账号为普通用户，无后台管理权限。');
+  location.href = '/login';
+}
 else {
   document.getElementById('userBadge').textContent = localStorage.getItem(USER_KEY) || 'admin';
   document.getElementById('logoutBtn').addEventListener('click', logout);

@@ -9,15 +9,17 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
-from gpm_common import AuthError, create_token, decode_token, require_token, route, verify_password
+from gpm_common import AuthError, create_token, decode_token, require_admin, require_token, route, verify_password
 
 from app.config import settings
 
 
 router = APIRouter()
 
-# 写操作与用户管理需要登录 token
+# 改密码：任何登录用户可改自己的密码（含普通用户，客户端登录后也能改密）
 _require_auth = Depends(require_token(settings.auth_secret))
+# 用户管理（增删改查用户）：仅管理员
+_require_admin = Depends(require_admin(settings.auth_secret))
 
 
 # ---------- 登录 ----------
@@ -79,14 +81,14 @@ class UserRoleUpdate(BaseModel):
     role: str  # "admin" | "user"
 
 
-@router.get(route("/users"), dependencies=[_require_auth])
+@router.get(route("/users"), dependencies=[_require_admin])
 def list_users() -> dict:
     """列出所有用户名及角色（不返回 hash）。"""
     users = settings.users
     return {"users": [{"username": u, "role": d["role"]} for u, d in users.items()]}
 
 
-@router.post(route("/users"), dependencies=[_require_auth])
+@router.post(route("/users"), dependencies=[_require_admin])
 def add_user(req: UserCreateRequest) -> dict:
     """新增用户，可指定是否管理员。"""
     if len(req.password) < 6:
@@ -98,7 +100,7 @@ def add_user(req: UserCreateRequest) -> dict:
     return {"created": req.username, "role": "admin" if req.is_admin else "user"}
 
 
-@router.patch(route("/users/{username}"), dependencies=[_require_auth])
+@router.patch(route("/users/{username}"), dependencies=[_require_admin])
 def update_user_role(username: str, req: UserRoleUpdate) -> dict:
     """修改用户角色（admin / user）。"""
     try:
@@ -108,7 +110,7 @@ def update_user_role(username: str, req: UserRoleUpdate) -> dict:
     return {"username": username, "role": req.role}
 
 
-@router.delete(route("/users/{username}"), dependencies=[_require_auth])
+@router.delete(route("/users/{username}"), dependencies=[_require_admin])
 def delete_user(username: str) -> dict:
     """删除用户（至少保留一个管理员）。"""
     try:

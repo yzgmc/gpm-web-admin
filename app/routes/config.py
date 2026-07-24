@@ -5,14 +5,15 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from gpm_common import require_token, route
+from gpm_common import require_admin, route
 
 from app.config import settings
 from app.reporter import restart_reporter
 
 
 router = APIRouter()
-_require_auth = Depends(require_token(settings.auth_secret))
+# 修改运行时配置需要管理员权限
+_require_admin = Depends(require_admin(settings.auth_secret))
 
 
 class RuntimeConfig(BaseModel):
@@ -40,7 +41,7 @@ def get_config() -> RuntimeConfig:
     )
 
 
-@router.put(route("/config"), response_model=RuntimeConfig, dependencies=[_require_auth])
+@router.put(route("/config"), response_model=RuntimeConfig, dependencies=[_require_admin])
 def update_config(req: RuntimeConfigUpdate) -> RuntimeConfig:
     """修改运行时配置并热重启上报线程。
 

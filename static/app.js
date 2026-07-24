@@ -1,6 +1,7 @@
 const API = '/api/v1/dashboard';
 const TOKEN_KEY = 'gpm_token';
 const USER_KEY = 'gpm_user';
+const ROLE_KEY = 'gpm_role';
 
 const LIGHT_LABEL = { green: '健康', yellow: '降级', red: '异常', off: '未知' };
 
@@ -8,7 +9,11 @@ const LIGHT_LABEL = { green: '健康', yellow: '降级', red: '异常', off: '�
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 
 function requireLogin() {
-  if (!getToken()) {
+  // 仪表盘为后台管理视图，仅管理员可访问：无 token 或非 admin → 跳登录页
+  if (!getToken() || localStorage.getItem(ROLE_KEY) !== 'admin') {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(ROLE_KEY);
     location.href = '/login';
     return true;
   }
@@ -18,6 +23,7 @@ function requireLogin() {
 function logout() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(ROLE_KEY);
   location.href = '/login';
 }
 
@@ -189,8 +195,8 @@ async function load() {
   if (!token) { location.href = '/login'; return; }
   try {
     const res = await fetch(API, { headers: { 'Authorization': 'Bearer ' + token } });
-    if (res.status === 401) {
-      // token 失效或过期，跳回登录
+    if (res.status === 401 || res.status === 403) {
+      // token 失效/过期 或非管理员无权限，跳回登录
       logout();
       return;
     }

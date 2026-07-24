@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-from gpm_common import GamePushError, ModpackCreate, require_token, route
+from gpm_common import GamePushError, ModpackCreate, require_admin, route
 from gpm_common.protocol import ErrorCode
 
 from app import storage
@@ -15,8 +15,8 @@ from app.server_info import server_info
 
 router = APIRouter()
 
-# 写操作（上传 / 删除）需要登录 token；读操作（列表 / 详情 / 下载）对客户端开放
-_require_auth = Depends(require_token(settings.auth_secret))
+# 写操作（上传 / 删除 / 修改）需要管理员 token；读操作（列表 / 详情 / 下载）对客户端开放
+_require_admin = Depends(require_admin(settings.auth_secret))
 
 
 def _form_field(value: str | None, default: str = "") -> str:
@@ -28,7 +28,7 @@ def list_modpacks():
     return {"modpacks": [m.model_dump() for m in storage.list_modpacks()]}
 
 
-@router.post(route("/modpacks"), dependencies=[_require_auth])
+@router.post(route("/modpacks"), dependencies=[_require_admin])
 async def upload_modpack(
     file: UploadFile = File(...),
     name: str = Form(...),
@@ -103,7 +103,7 @@ def get_modpack(item_id: str):
     return storage.get_modpack(item_id).model_dump()
 
 
-@router.patch(route("/modpacks/{item_id}"), dependencies=[_require_auth])
+@router.patch(route("/modpacks/{item_id}"), dependencies=[_require_admin])
 def update_modpack(item_id: str, fields: dict):
     """修改整合包元数据 / 上下架状态。"""
     return storage.update_modpack(item_id, fields).model_dump()
@@ -117,7 +117,7 @@ def download_modpack(item_id: str):
     return FileResponse(path, filename=modpack.file_name)
 
 
-@router.delete(route("/modpacks/{item_id}"), dependencies=[_require_auth])
+@router.delete(route("/modpacks/{item_id}"), dependencies=[_require_admin])
 def delete_modpack(item_id: str):
     storage.delete_modpack(item_id)
     return {"deleted": item_id}

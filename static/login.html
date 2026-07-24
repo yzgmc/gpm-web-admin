@@ -22,7 +22,8 @@
     <div class="hint">默认账号 admin / admin123（请尽快修改）</div>
   </div>
   <script>
-    if (localStorage.getItem('gpm_token')) location.href = '/admin';
+    // 仅管理员自动进入后台；普通用户残留 token 不跳转，避免与后台校验死循环
+    if (localStorage.getItem('gpm_token') && localStorage.getItem('gpm_role') === 'admin') location.href = '/admin';
     const form = document.getElementById('loginForm');
     const btn = document.getElementById('submitBtn');
     const errMsg = document.getElementById('errMsg');
@@ -40,8 +41,16 @@
         });
         const data = await res.json();
         if (!res.ok) { errMsg.textContent = data.error || '登录失败'; btn.disabled = false; btn.textContent = '登录'; return; }
+        // 普通用户（role=user）无后台管理权限，不允许进入后台；
+        // 普通用户仍可用同一账号登录客户端正常使用。
+        if (data.role !== 'admin') {
+          errMsg.textContent = '该账号为普通用户，无后台管理权限。普通用户请使用客户端登录。';
+          btn.disabled = false; btn.textContent = '登录';
+          return;
+        }
         localStorage.setItem('gpm_token', data.token);
         localStorage.setItem('gpm_user', data.username);
+        localStorage.setItem('gpm_role', data.role);
         location.href = '/admin';
       } catch (err) {
         errMsg.textContent = '网络错误：' + err;

@@ -7,22 +7,23 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from gpm_common import require_token, route
+from gpm_common import require_admin, route
 
 from app.config import settings
 from app.updater import apply_update, check_for_updates, status
 
 router = APIRouter()
-_require_auth = Depends(require_token(settings.auth_secret))
+# 系统更新属高危管理操作，仅管理员
+_require_admin = Depends(require_admin(settings.auth_secret))
 
 
-@router.get(route("/update/status"), dependencies=[_require_auth])
+@router.get(route("/update/status"), dependencies=[_require_admin])
 def get_update_status():
     """查询当前更新状态（上次检查时间、是否有更新、自动更新开关等）。"""
     return status.snapshot()
 
 
-@router.post(route("/update/check"), dependencies=[_require_auth])
+@router.post(route("/update/check"), dependencies=[_require_admin])
 def manual_check():
     """手动检查是否有更新（不应用，仅 fetch + 比较 SHA）。"""
     result = check_for_updates()
@@ -36,7 +37,7 @@ def manual_check():
     return result
 
 
-@router.post(route("/update/apply"), dependencies=[_require_auth])
+@router.post(route("/update/apply"), dependencies=[_require_admin])
 def manual_apply():
     """手动应用更新：git pull + pip install + 重启服务。
 
@@ -45,7 +46,7 @@ def manual_apply():
     return apply_update()
 
 
-@router.patch(route("/update/auto"), dependencies=[_require_auth])
+@router.patch(route("/update/auto"), dependencies=[_require_admin])
 def toggle_auto_update(body: dict):
     """开启/关闭自动更新检查。body: {"enabled": true|false}"""
     enabled = bool(body.get("enabled", True))
