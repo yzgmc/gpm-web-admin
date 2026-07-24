@@ -20,6 +20,14 @@ from app.config import settings
 
 
 STALE_SECONDS = 30.0  # 兜底默认；运行时用 settings.stale_seconds
+PRUNE_MULTIPLIER = 10  # 离线超过 stale 阈值的 N 倍后清理，避免历史累积
+
+
+def _dedup_key(hb: Heartbeat) -> str:
+    """去重 key：客户端带 username 时按用户合并；其余按 reporter_id。"""
+    if hb.kind == "client" and hb.username:
+        return f"user:{hb.username}"
+    return hb.reporter_id
 
 
 def _stale_threshold() -> float:
@@ -41,6 +49,7 @@ class StoredReport:
         self.reporter_id = hb.reporter_id
         self.kind = hb.kind
         self.name = hb.name
+        self.username = hb.username
         self.base_url = hb.base_url
         self.last_heartbeat = hb
         self.last_seen_at = _now()
@@ -80,6 +89,7 @@ class StoredReport:
             "reporter_id": self.reporter_id,
             "kind": self.kind,
             "name": self.name,
+            "username": self.username,
             "base_url": self.base_url,
             "online": online,
             "status": self.last_heartbeat.status,
@@ -101,13 +111,14 @@ class ReportStore:
         self._reports: dict[str, StoredReport] = {}
 
     def record(self, hb: Heartbeat) -> StoredReport:
+        key = _dedup_key(hb)
         with self._lock:
-            existing = self._reports.get(hb.reporter_id)
+            existing = self._reports.get(key)
             if existing:
                 existing.update(hb)
             else:
                 existing = StoredReport(hb)
-                self._reports[hb.reporter_id] = stored = existing
+                self._reports[key] = existing
         # 在锁外同步管理员账号到本地用户表（避免死锁）
         admin_users = (hb.metrics or {}).get("admin_users")
         if admin_users:
@@ -116,6 +127,21 @@ class ReportStore:
             except Exception:
                 pass
         return existing
+
+    def prune_stale(self) -> int:
+        """清理长时间离线的条目（超过 stale 阈值的 N 倍），返回清理数量。"""
+        threshold = _stale_threshold() * PRUNE_MULTIPLIER
+        now = _now()
+        removed = 0
+        with self._lock:
+            stale_keys = [
+                k for k, r in self._reports.items()
+                if (now - r.last_seen_at).total_seconds() > threshold
+            ]
+            for k in stale_keys:
+                del self._reports[k]
+                removed += 1
+        return removed
 
     def all_reports(self) -> list[StoredReport]:
         with self._lock:
@@ -126,6 +152,8 @@ class ReportStore:
             return [r for r in self._reports.values() if r.kind == kind]
 
     def aggregate(self) -> dict[str, Any]:
+        # 先清理长时间离线的条目，避免历史累积导致仪表盘条目越来越多
+        self.prune_stale()
         snaps = self.all_reports()
         online = [r for r in snaps if not r.is_stale()]
         # 按 kind 分组

@@ -92,7 +92,9 @@ function renderReporter(card, r) {
   let rows = '';
   if (r.kind === 'client') {
     const installed = (m.installed_modpacks || []).map(i => `<span class="chip">${i.name || i.id}</span>`).join('');
+    const userRow = r.username ? `<div><span class="k">登录用户</span><span>${r.username}</span></div>` : '';
     rows = `
+      ${userRow}
       <div><span class="k">灯色原因</span><span title="${light.reason}">${light.reason || '—'}</span></div>
       <div><span class="k">协议版本</span><span>${r.protocol_version}</span></div>
       <div><span class="k">已安装整合包</span><span>${(m.installed_modpacks || []).length}</span></div>
